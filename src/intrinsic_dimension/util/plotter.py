@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 from torchviz import make_dot
 
-from intrinsic_dimension.util.constants import DEVICE
+from .constants import DEVICE
 
 
 def close_plot():
@@ -49,14 +49,21 @@ def plot_results(baseline, dints, performance, basedir, name, xlabel=None, ylabe
     close_plot()
 
 
-def plot_model(model, name, basedir, batch, labels):
+def plot_model(model, name, basedir, sample):
     # save plot
-    if not os.path.exists(os.path.join(basedir, "plot")):
-        os.mkdir(os.path.join(basedir, "plot"))
+    os.makedirs(os.path.join(basedir, "plot"), exist_ok=True)
 
     model.to(DEVICE)
-    batch.to(DEVICE)
-    make_dot(model(batch, labels=labels)["loss"], params=dict(model.named_parameters()), show_attrs=True, show_saved=True).render(outfile=f"{basedir}/plot/{name}.png")
+    sample.to(DEVICE)
+    make_dot(
+        model(input_ids=sample["input_ids"],
+              attention_mask=sample["attention_mask"],
+              token_type_ids=sample["token_type_ids"],
+              labels=sample["labels"])["loss"],
+        params=dict(model.named_parameters()),
+        show_attrs=True,
+        show_saved=True
+    ).render(outfile=f"{basedir}/plot/{name}.png")
 
 
 def plot_intrinsic_dimensions(values, basedir, scale):

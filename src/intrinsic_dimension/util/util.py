@@ -16,9 +16,9 @@ def count_params(model):
 
 def generate_intrinsic_dimension_candidates(start, end, n_points=100, scale='log', plot=False, basedir=''):
     if scale == 'log':
-        d_values = np.logspace(start, end, num=n_points)
+        d_values = np.logspace(start, end, num=n_points, dtype=np.uint32)
     elif scale == 'linear':
-        d_values = np.linspace(start, end, num=n_points)
+        d_values = np.linspace(start, end, num=n_points, dtype=np.uint32)
     else:
         raise AttributeError(f'Unsupported scale {scale}')
 

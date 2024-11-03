@@ -1,14 +1,15 @@
+import gc
 from collections import defaultdict
 
 import torch
-from transformers import set_seed, get_scheduler, AdamW, TrainingArguments, Trainer
+from transformers import set_seed, get_scheduler, AdamW, TrainingArguments, Trainer, DataCollatorWithPadding
 
-from intrinsic_dimension.models.modeling_bert import get_bert_model, get_bert_tokenizer
-from intrinsic_dimension.util.constants import METRIC
-from intrinsic_dimension.util.data import get_dataset
-from intrinsic_dimension.util.plotter import plot_model, plot_results
-from intrinsic_dimension.util.util import parse_args, generate_intrinsic_dimension_candidates, count_params
-from intrinsic_dimension.wrappers.modeling_transformer_layer import TransformerSubspaceWrapper
+from ....models.modeling_bert import get_bert_model, get_bert_tokenizer
+from ....util.constants import METRIC, DEVICE
+from ....util.data import get_dataset
+from ....util.plotter import plot_model, plot_results
+from ....util.util import parse_args, generate_intrinsic_dimension_candidates, count_params
+from ....wrappers.modeling_transformer_layer import TransformerSubspaceWrapper
 
 basedir = "src/intrinsic_dimension/experiments/mrpc/bert"
 
@@ -20,7 +21,7 @@ def accuracy_criterion(eval_prediction):
     return {"accuracy": accuracy["accuracy"]}
 
 
-def train(args, model, train_dataset, eval_dataset):
+def train(args, model, train_dataset, eval_dataset, data_collator):
     optimizer = AdamW(
         model.parameters(),
         lr=args.learning_rate,
@@ -61,6 +62,7 @@ def train(args, model, train_dataset, eval_dataset):
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        data_collator=data_collator,
         optimizers=(optimizer, lr_scheduler),
         compute_metrics=accuracy_criterion
     )
@@ -72,7 +74,9 @@ def train(args, model, train_dataset, eval_dataset):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    print(f"Using {DEVICE}")
+
+    args = parse_args("bert", "mrpc")
 
     set_seed(args.seed)
 
@@ -80,36 +84,47 @@ if __name__ == '__main__':
 
     train_dataset, eval_dataset = get_dataset("mrpc", tokenizer=tokenizer)
 
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
     # sample data for plotting model (primarily for dimensions)
-    sample_sequence, sample_labels = next(iter(torch.utils.data.DataLoader(eval_dataset, batch_size=args.eval_batch_size)))
+    sample = next(iter(torch.utils.data.DataLoader(eval_dataset, batch_size=args.eval_batch_size, collate_fn=data_collator)))
 
     # baseline
     baseline_model = get_bert_model()
-    baseline_accuracy = train(args, baseline_model, train_dataset, eval_dataset)
-    plot_model(baseline_model, "baseline", basedir, sample_sequence, sample_labels)
+    baseline_accuracy = train(args, baseline_model, train_dataset, eval_dataset, data_collator)
+    plot_model(baseline_model, "baseline", basedir, sample)
+
+    del baseline_model
+    gc.collect()
 
     # run for 10 d values from 1 to 10000 equally spaced on a log scale
     history = defaultdict(dict)
     found_did_dint90, found_said_dint90 = False, False
-    for dint in generate_intrinsic_dimension_candidates(start=1, end=4, n_points=10):
+    for dint in generate_intrinsic_dimension_candidates(start=3, end=4, n_points=10, plot=True, basedir=basedir):
         # wrap all linear and conv layers with the subspace layer
         did_model = TransformerSubspaceWrapper(get_bert_model(), dint)
-        history[dint]["did"] = train(args, did_model, train_dataset, eval_dataset)
+        history[dint]["did"] = train(args, did_model, train_dataset, eval_dataset, data_collator)
 
         if not found_did_dint90 and history[dint]["did"] >= 0.9 * baseline_accuracy:
             found_did_dint90 = True
             n_params = count_params(did_model)
             print("n_params in intrinsic model: ", n_params)
-            plot_model(did_model, "did_intrinsic_dim", basedir, sample_sequence, sample_labels)
+            plot_model(did_model, "did_intrinsic_dim", basedir, sample)
+
+        del did_model
+        gc.collect()
 
         said_model = TransformerSubspaceWrapper(get_bert_model(), dint, said=True)
-        history[dint]["said"] = train(args, said_model, train_dataset, eval_dataset)
+        history[dint]["said"] = train(args, said_model, train_dataset, eval_dataset, data_collator)
 
         if not found_said_dint90 and history[dint]["said"] >= 0.9 * baseline_accuracy:
             found_said_dint90 = True
             n_params = count_params(said_model)
             print("n_params in intrinsic model: ", n_params)
-            plot_model(said_model, "said_intrinsic_dim", basedir, sample_sequence, sample_labels)
+            plot_model(said_model, "said_intrinsic_dim", basedir, sample)
+
+        del said_model
+        gc.collect()
 
     plot_results(
         baseline=baseline_accuracy,

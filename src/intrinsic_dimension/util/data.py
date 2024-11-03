@@ -35,7 +35,9 @@ def get_dataset(name, tokenizer=None):
         tokenized_datasets = (raw_datasets
                               .map(lambda examples: tokenizer(examples['sentence1'], examples['sentence2'], truncation=True), batched=True)
                               .rename_column("label", "labels")
-                              .set_format("torch"))
+                              .remove_columns(["sentence1", "sentence2", "idx"]))
+
+        tokenized_datasets.set_format("torch")
 
         return tokenized_datasets["train"], tokenized_datasets["validation"]
     elif name == "qqp":
@@ -44,7 +46,9 @@ def get_dataset(name, tokenizer=None):
                               .map(lambda examples: tokenizer(examples['question1'], examples['question2'], truncation=True), batched=True)
                               .remove_columns(["question1", "question2", "idx"])
                               .rename_column("label", "labels")
-                              .set_format("torch"))
+                              .remove_columns(["sentence1", "sentence2", "idx"]))
+
+        tokenized_datasets.set_format("torch")
 
         return tokenized_datasets["train"], tokenized_datasets["validation"]
     else:
