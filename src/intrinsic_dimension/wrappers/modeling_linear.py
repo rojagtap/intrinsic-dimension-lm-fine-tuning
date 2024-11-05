@@ -16,11 +16,11 @@ class LinearSubspaceWrapper(BaseSubspaceWrapper):
     so P x theta will give a vector of weight size which can be reshaped for addition
     """
 
-    def __init__(self, layer, theta, _lambda=None, layer_index=-1):
+    def __init__(self, layer, theta, _lambda=None, layer_index=-1, fastfood=True):
         """
         theta will be shared across layers, but the projection matrix P will be unique to layer
         """
-        super(LinearSubspaceWrapper, self).__init__(layer, theta, _lambda, layer_index)
+        super(LinearSubspaceWrapper, self).__init__(layer, theta, _lambda, layer_index, fastfood=fastfood)
 
     def forward(self, x):
         weight, bias = super(LinearSubspaceWrapper, self).forward(x)

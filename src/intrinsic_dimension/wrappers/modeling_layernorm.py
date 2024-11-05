@@ -4,11 +4,11 @@ from .modeling_base import BaseSubspaceWrapper
 
 
 class LayerNormSubspaceWrapper(BaseSubspaceWrapper):
-    def __init__(self, layer, theta, _lambda=None, layer_index=-1):
+    def __init__(self, layer, theta, _lambda=None, layer_index=-1, fastfood=True):
         """
         theta will be shared across layers, but the projection matrix P will be unique to layer
         """
-        super(LayerNormSubspaceWrapper, self).__init__(layer, theta, _lambda, layer_index)
+        super(LayerNormSubspaceWrapper, self).__init__(layer, theta, _lambda, layer_index, fastfood=fastfood)
 
     def forward(self, x):
         weight, bias = super(LayerNormSubspaceWrapper, self).forward(x)
