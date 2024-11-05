@@ -71,23 +71,19 @@ class FastFoodProjection(torch.nn.Module):
         self.size = 2 ** int(np.ceil(np.log(self.flat_weight_dim) / np.log(2)))
 
         # Gaussian scaling matrix, whose elements $G_{i,i} \sim \mathcal{N}(0, 1)$
-        self.G = torch.nn.Parameter(torch.FloatTensor(self.size, ).normal_())
+        G = torch.FloatTensor(self.size, ).normal_()
+        self.register_buffer('G', G)
 
         # Random permutation matrix
-        self.Pi = torch.nn.Parameter(torch.LongTensor(np.random.permutation(self.size)))
+        Pi = torch.LongTensor(np.random.permutation(self.size))
+        self.register_buffer('Pi', Pi)
 
         # Binary scaling matrix where $B_{i,i} \in \{\pm 1 \}$ drawn iid
-        self.B = 2 * torch.nn.Parameter(torch.FloatTensor(self.size).uniform_(0, 2).type(torch.LongTensor) - 1)
+        B = 2 * torch.FloatTensor(self.size).uniform_(0, 2).type(torch.LongTensor) - 1
+        self.register_buffer('B', B)
 
-        self.divisor = torch.sqrt(self.size * torch.sum(torch.pow(self.G, 2)))
-
-        self.reset_parameters()
-
-    def reset_parameters(self):
-        self.B.requires_grad_(False)
-        self.G.requires_grad_(False)
-        self.Pi.requires_grad_(False)
-        self.divisor.requires_grad_(False)
+        divisor = torch.sqrt(self.size * torch.sum(torch.pow(self.G, 2)))
+        self.register_buffer('divisor', divisor)
 
     def forward(self, theta):
         # Fastfood transform
