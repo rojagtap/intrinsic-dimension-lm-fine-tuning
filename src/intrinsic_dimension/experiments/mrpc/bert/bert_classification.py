@@ -2,7 +2,7 @@ import gc
 from collections import defaultdict
 
 import torch
-from transformers import set_seed, get_scheduler, AdamW, TrainingArguments, Trainer, DataCollatorWithPadding
+from transformers import set_seed, get_scheduler, TrainingArguments, Trainer, DataCollatorWithPadding
 
 from ....models.modeling_bert import get_bert_model, get_bert_tokenizer
 from ....util.constants import METRIC, DEVICE
@@ -22,11 +22,12 @@ def accuracy_criterion(eval_prediction):
 
 
 def train(args, model, train_dataset, eval_dataset, data_collator):
-    optimizer = AdamW(
+    optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=args.learning_rate,
         betas=(0.9, 0.999),
-        eps=1e-08
+        eps=1e-08,
+        weight_decay=0.0
     )
 
     num_training_steps = args.num_epochs * len(train_dataset) // args.train_batch_size
@@ -37,12 +38,9 @@ def train(args, model, train_dataset, eval_dataset, data_collator):
         num_training_steps=num_training_steps
     )
 
-    if torch.cuda.device_count() > 1:
-        model = torch.nn.DataParallel(model)
-
     training_args = TrainingArguments(
         output_dir=f"{basedir}/checkpoints",
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         per_device_train_batch_size=args.train_batch_size,
         per_device_eval_batch_size=args.eval_batch_size,
         num_train_epochs=args.num_epochs,

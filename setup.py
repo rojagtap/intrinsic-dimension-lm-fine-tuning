@@ -40,6 +40,8 @@ def setup_package():
             'evaluate==0.4.3',
             'torch==2.5.1',
             'transformers==4.46.1',
+            'accelerate==1.1.0',
+            'scikit-learn==1.5.2',
             'setuptools==75.1.0'
         ],
     )
