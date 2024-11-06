@@ -25,8 +25,8 @@ def setup_package():
             CUDAExtension(
                 name='src.intrinsic_dimension.wrappers.projections.fwh_cuda',
                 sources=[
-                    'src/intrinsic_dimension/wrappers/projections/fwh_cuda/fast_walsh_hadamard.cpp',
-                    'src/intrinsic_dimension/wrappers/projections/fwh_cuda/fast_walsh_hadamard.cu',
+                    'src/intrinsic_dimension/wrappers/projections/fwh_cuda/fast_walsh_hadamard_cpp.cpp',
+                    'src/intrinsic_dimension/wrappers/projections/fwh_cuda/fast_walsh_hadamard_cu.cu',
                 ]
             )
         ],
