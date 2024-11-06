@@ -13,7 +13,7 @@ class FastWalshHadamard(torch.autograd.Function):
         ctx.save_for_backward(torch.tensor([1 / np.sqrt(float(x.size(0)))]).to(x))
 
         if x.is_cuda:
-            from .fwh_cuda import fast_walsh_hadamard_transform as fast_walsh_hadamard_transform_cuda
+            from fwh_cuda import fast_walsh_hadamard_transform as fast_walsh_hadamard_transform_cuda
             return fast_walsh_hadamard_transform_cuda(x.float(), False)
         else:
             return FastWalshHadamard.fast_walsh_hadamard_transform_cpu(x.float(), normalize=False)
@@ -23,7 +23,7 @@ class FastWalshHadamard(torch.autograd.Function):
         x, = ctx.saved_tensors
 
         if grad_output.is_cuda:
-            from .fwh_cuda import fast_walsh_hadamard_transform as fast_walsh_hadamard_transform_cuda
+            from fwh_cuda import fast_walsh_hadamard_transform as fast_walsh_hadamard_transform_cuda
             return x * fast_walsh_hadamard_transform_cuda(grad_output.clone().float(), False).to(grad_output)
         else:
             return x * FastWalshHadamard.fast_walsh_hadamard_transform_cpu(grad_output.clone().float(), normalize=False).to(grad_output)

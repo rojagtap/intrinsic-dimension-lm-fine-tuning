@@ -23,7 +23,7 @@ def setup_package():
         keywords='text nlp machinelearning',
         ext_modules=[
             CUDAExtension(
-                name='src.intrinsic_dimension.wrappers.projections.fwh_cuda',
+                name='fwh_cuda',
                 sources=[
                     'src/intrinsic_dimension/wrappers/projections/fwh_cuda/fast_walsh_hadamard_cpp.cpp',
                     'src/intrinsic_dimension/wrappers/projections/fwh_cuda/fast_walsh_hadamard_cu.cu',
